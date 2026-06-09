@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>html,body,#map{height:100%;margin:0}</style>
+<!-- Zoho embedded app SDK -->
+<script src="https://live.zwidgets.com/js-sdk/1.0.5/ZohoEmbededAppSDK.min.js"></script>
+</head>
+<body>
+<div id="map"></div>
+<script>
+// ---- configure these to your org -------------------------------------
+const FIELD_LAT   = "Latitude";    // API name of your latitude field
+const FIELD_LNG   = "Longitude";   // API name of your longitude field
+const FIELD_COLOR = "Status";      // API name of the field that drives pin color
+const COLORS = {                   // field value -> hex; add your own values
+  "Active":   "#2e7d32",
+  "Prospect": "#f9a825",
+  "Closed":   "#c62828",
+  "_default": "#1565c0"
+};
+const GMAPS_KEY = "YOUR_GOOGLE_MAPS_API_KEY";
+// ----------------------------------------------------------------------
+
+let map, accounts = [];
+
+// 1. Pull every Account, 200 per page, keep only those with coordinates
+async function fetchAccounts(){
+  let page = 1, out = [];
+  while(true){
+    const r = await ZOHO.CRM.API.getAllRecords({ Entity:"Accounts", per_page:200, page });
+    const rows = (r && r.data) || [];
+    out = out.concat(rows);
+    if(rows.length < 200) break;
+    page++;
+  }
+  return out.filter(a => a[FIELD_LAT] != null && a[FIELD_LNG] != null);
+}
+
+// 2. Draw the map (called by the Google Maps loader once it's ready)
+async function initMap(){
+  const { Map } = await google.maps.importLibrary("maps");
+  const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
+
+  map = new Map(document.getElementById("map"), {
+    center:{ lat:42.33, lng:-83.05 }, zoom:5, mapId:"DEMO_MAP_ID"
+  });
+
+  const bounds = new google.maps.LatLngBounds();
+  accounts.forEach(a => {
+    const pos = { lat:parseFloat(a[FIELD_LAT]), lng:parseFloat(a[FIELD_LNG]) };
+    if(isNaN(pos.lat) || isNaN(pos.lng)) return;
+    const color = COLORS[a[FIELD_COLOR]] || COLORS._default;
+    const pin = new PinElement({ background:color, borderColor:"#000", glyphColor:"#fff" });
+    const m = new AdvancedMarkerElement({ map, position:pos, title:a.Account_Name, content:pin.element });
+    const info = new google.maps.InfoWindow({
+      content:`<b>${a.Account_Name || ""}</b><br>${a[FIELD_COLOR] || ""}`
+    });
+    m.addListener("gmp-click", () => info.open({ map, anchor:m }));
+    bounds.extend(pos);
+  });
+  if(accounts.length) map.fitBounds(bounds);
+}
+window.initMap = initMap;
+
+// 3. Boot: init SDK -> fetch data -> load Google Maps -> draw
+ZOHO.embeddedApp.on("PageLoad", async () => {
+  try {
+    accounts = await fetchAccounts();
+    const s = document.createElement("script");
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&loading=async&libraries=marker&callback=initMap`;
+    document.head.appendChild(s);
+  } catch(e){ console.error("Account fetch failed", e); }
+});
+ZOHO.embeddedApp.init();
+</script>
+</body>
+</html>
