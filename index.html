@@ -18,15 +18,43 @@ const COLORS = {
   "_default": "#1565c0"
 };
 
+// Each point can carry any extra fields you want.
 const POINTS = [
-  { name: "East Grinstead",  lat: 51.1290, lng: -0.0094, status: "Active"   },
-  { name: "London",          lat: 51.5074, lng: -0.1278, status: "Prospect" },
-  { name: "Brighton",        lat: 50.8225, lng: -0.1372, status: "Closed"   },
-  { name: "Crawley",         lat: 51.1092, lng: -0.1872, status: "Active"   },
-  { name: "Tunbridge Wells", lat: 51.1324, lng:  0.2637, status: "Prospect" },
-  { name: "Guildford",       lat: 51.2362, lng: -0.5704, status: "Active"   }
+  { name:"East Grinstead",  lat:51.1290, lng:-0.0094, status:"Active",
+    owner:"Tom",   phone:"01342 123456", address:"1 High St, East Grinstead", value:"£12,500" },
+  { name:"London",          lat:51.5074, lng:-0.1278, status:"Prospect",
+    owner:"Gina",  phone:"020 7946 0000", address:"10 Cannon St, London",      value:"£40,000" },
+  { name:"Brighton",        lat:50.8225, lng:-0.1372, status:"Closed",
+    owner:"Tom",   phone:"01273 000000",  address:"5 North St, Brighton",      value:"£8,000"  },
+  { name:"Crawley",         lat:51.1092, lng:-0.1872, status:"Active",
+    owner:"Khurram", phone:"01293 000000", address:"2 Queens Sq, Crawley",     value:"£15,750" },
+  { name:"Tunbridge Wells", lat:51.1324, lng: 0.2637, status:"Prospect",
+    owner:"Gina",  phone:"01892 000000",  address:"7 The Pantiles, T. Wells",  value:"£22,300" }
+];
+
+// Which fields appear in the popup, and their labels. Reorder/remove as needed.
+const INFO_FIELDS = [
+  { key:"status",  label:"Status"  },
+  { key:"owner",   label:"Owner"   },
+  { key:"phone",   label:"Phone"   },
+  { key:"address", label:"Address" },
+  { key:"value",   label:"Value"   }
 ];
 // ----------------------------------------------------------------------
+
+const esc = s => String(s).replace(/[&<>"]/g,
+  c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+
+function infoHtml(p){
+  const rows = INFO_FIELDS
+    .filter(f => p[f.key] != null && p[f.key] !== "")
+    .map(f => `<tr><td style="color:#666;padding-right:10px;vertical-align:top">${esc(f.label)}</td>`
+            + `<td>${esc(p[f.key])}</td></tr>`)
+    .join("");
+  return `<div style="font:13px/1.45 system-ui,sans-serif;min-width:180px">`
+       + `<div style="font-weight:600;font-size:14px;margin-bottom:4px">${esc(p.name)}</div>`
+       + `<table>${rows}</table></div>`;
+}
 
 async function initMap(){
   const { Map } = await google.maps.importLibrary("maps");
@@ -36,15 +64,19 @@ async function initMap(){
     center: { lat: 51.13, lng: -0.1 }, zoom: 9, mapId: "DEMO_MAP_ID"
   });
 
+  const shared = new google.maps.InfoWindow();
   const bounds = new google.maps.LatLngBounds();
+
   POINTS.forEach(p => {
     const color = COLORS[p.status] || COLORS._default;
     const pin = new PinElement({ background: color, borderColor: "#000", glyphColor: "#fff" });
     const marker = new AdvancedMarkerElement({
       map, position: { lat: p.lat, lng: p.lng }, title: p.name, content: pin.element
     });
-    const info = new google.maps.InfoWindow({ content: `<b>${p.name}</b><br>${p.status}` });
-    marker.addListener("gmp-click", () => info.open({ map, anchor: marker }));
+    marker.addListener("gmp-click", () => {
+      shared.setContent(infoHtml(p));
+      shared.open({ map, anchor: marker });
+    });
     bounds.extend({ lat: p.lat, lng: p.lng });
   });
   map.fitBounds(bounds);
