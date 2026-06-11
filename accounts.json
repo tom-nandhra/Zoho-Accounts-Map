@@ -1,18 +1,1 @@
-[
-    {
-        "id": "962742000000723021",
-        "RAG": "Green",
-        "Description": "description 3",
-        "Account_Name": "Test3",
-        "Billing_Latitude": 50.8225,
-        "Billing_Longitude": -0.1372
-    },
-    {
-        "id": "962742000000723018",
-        "RAG": "Amber",
-        "Description": "description 2.",
-        "Account_Name": "test2",
-        "Billing_Latitude": 51.5074,
-        "Billing_Longitude": -0.1278
-    }
-]
+[{"id":"962742000000723021","RAG":"Green","Description":"description 3","Account_Name":"Test3","Billing_Latitude":50.8225,"Billing_Longitude":-0.1372},{"id":"962742000000723018","RAG":"Amber","Description":"description 2.","Account_Name":"test2","Billing_Latitude":51.5074,"Billing_Longitude":-0.1278},{"id":"962742000000723015","RAG":"Red","Description":"description 1.","Account_Name":"Test1","Billing_Latitude":51.129,"Billing_Longitude":-0.0094}]
