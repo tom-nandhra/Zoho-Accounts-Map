@@ -1,1 +1,3 @@
-sometext
+[
+  { "id": "5725767000001234567", "Account_Name": "Acme Ltd", "Billing_Latitude": 51.129, "Billing_Longitude": -0.0094, "RAG": "Green", "Description": "Key client" }
+]
